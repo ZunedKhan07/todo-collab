@@ -6,7 +6,7 @@ import {
          smartAssignTask, 
          updateTask
        } 
-          from "../controllers/task.Controller";
+          from "../controllers/task.Controller.js";
 
 const router = Router();
 
