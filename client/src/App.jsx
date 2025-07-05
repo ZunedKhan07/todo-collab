@@ -1,47 +1,29 @@
-import { useEffect } from "react";
-import socket from "./socket";
 import React from "react";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import KanbanBoard from "./pages/KanbanBoard";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
-  useEffect(() => {
-    // Server connected
-    socket.on("connect", () => {
-      console.log("🟢 Connected to server:", socket.id);
-    });
-
-    // Event listeners
-    socket.on("task_created", (task) => {
-      console.log("📥 Task Created:", task);
-    });
-
-    socket.on("task_updated", (task) => {
-      console.log("✏️ Task Updated:", task);
-    });
-
-    socket.on("task_deleted", (task) => {
-      console.log("❌ Task Deleted:", task);
-    });
-
-    // Disconnected
-    socket.on("disconnect", () => {
-      console.log("🔴 Disconnected from server");
-    });
-
-    // Cleanup on unmount
-    return () => {
-      socket.off("connect");
-      socket.off("disconnect");
-      socket.off("task_created");
-      socket.off("task_updated");
-      socket.off("task_deleted");
-    };
-  }, []);
-
   return (
-    <div style={{ padding: "2rem" }}>
-      <h1>🧪 Real-Time Task Event Tester</h1>
-      <p>Check your browser console (F12) for live logs.</p>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Login />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* Protected dashboard route */}
+        <Route
+  path="/dashboard"
+  element={
+    <ProtectedRoute>
+      <KanbanBoard />
+    </ProtectedRoute>
+  }
+/>
+      </Routes>
+    </BrowserRouter>
   );
 }
 

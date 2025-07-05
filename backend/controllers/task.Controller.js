@@ -69,11 +69,20 @@ export const updateTask = async (req, res) => {
       }
     }
 
-    const updatedTask = await Task.findByIdAndUpdate(
-      id,
-      { title, description, status, priority, assignedUser },
-      { new: true }
-    );
+  const updatedTask = await Task.findByIdAndUpdate(
+  id,
+  {
+    title,
+    description,
+    status,
+    priority,
+    assignedUser,
+    lastUpdatedBy: req.user.id,
+    updatedAt: Date.now(),
+  },
+  { new: true }
+);
+
 
     if (!updatedTask) {
       return res.status(404).json({ msg: "Task not found" });
@@ -85,7 +94,7 @@ export const updateTask = async (req, res) => {
       userId: req.user.id,
     });
 
-    // ✅ Emit update event
+    // Emit update event
     const io = req.app.get("io");
     io.emit("task_updated", updatedTask);
 
@@ -156,7 +165,7 @@ export const smartAssignTask = async (req, res) => {
       userId: req.user.id,
     });
 
-    // ✅ Emit task_created event
+    // Emit task_created event
     const io = req.app.get("io");
     io.emit("task_created", newTask);
 

@@ -12,18 +12,19 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Create HTTP server
+// 🔹 Create HTTP server
 const server = http.createServer(app);
 
-// Setup Socket.IO server
+// 🔹 Setup Socket.IO server
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173", // Vite React frontend
-    methods: ["GET", "POST", "PUT", "DELETE"]
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true
   }
 });
 
-// Socket.IO connection listener
+// 🔹 Socket.IO connection
 io.on("connection", (socket) => {
   console.log("🟢 User connected:", socket.id);
 
@@ -32,21 +33,26 @@ io.on("connection", (socket) => {
   });
 });
 
-// Make io available globally (if needed in controllers)
+// 🔹 Make io available to routes/controllers if needed
 app.set("io", io);
 
-// Middlewares
-app.use(cors());
+// 🔹 CORS middleware (required for cookies/tokens from frontend)
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true
+}));
+
+// 🔹 Other middlewares
 app.use(express.json());
 
-// Routes
+// 🔹 Routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/tasks", taskRoutes);
-app.use("/api/v1/logs", logRoutes)
+app.use("/api/v1/logs", logRoutes);
 
+// 🔹 Connect DB and start server
 connectDB();
 
-// Start server with HTTP+Socket
 server.listen(PORT, () =>
   console.log(`\n🚀 Server running on port ${PORT}`)
 );

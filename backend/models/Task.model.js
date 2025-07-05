@@ -1,31 +1,44 @@
 import mongoose from "mongoose";
 
-const taskSchema = new mongoose.Schema(
-  {
-    title: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    description: {
-      type: String,
-    },
-    status: {
-      type: String,
-      enum: ["Todo", "In Progress", "Done"],
-      default: "Todo",
-    },
-    priority: {
-      type: String,
-      enum: ["Low", "Medium", "High"],
-      default: "Medium",
-    },
-    assignedUser: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
+const taskSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+    trim: true,
   },
-  { timestamps: true }
-);
+  description: {
+    type: String,
+  },
+  status: {
+    type: String,
+    enum: ["Todo", "In Progress", "Done"],
+    default: "Todo",
+  },
+  priority: {
+    type: String,
+    enum: ["Low", "Medium", "High"],
+    default: "Medium",
+  },
+  assignedUser: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+
+  // Conflict detection fields
+  lastUpdatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  },
+
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
 
 export const Task = mongoose.model("Task", taskSchema);
