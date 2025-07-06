@@ -13,9 +13,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected dashboard route */}
         <Route
-  path="/dashboard"
+  path="/KanbanBoard"
   element={
     <ProtectedRoute>
       <KanbanBoard />

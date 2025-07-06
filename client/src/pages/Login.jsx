@@ -4,6 +4,7 @@ import { setUser } from "../redux/slices/authSlice";
 import axios from "../axios";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+import KanbanBoard from "./KanbanBoard";
 
 function Login() {
   const dispatch = useDispatch();
@@ -21,7 +22,7 @@ function Login() {
 
       dispatch(setUser({ user: res.data.user, token: res.data.token }));
 
-      navigate("/dashboard");
+      navigate("/KanbanBoard");
     } catch (err) {
       alert(err.response?.data?.msg || "Login failed");
     }

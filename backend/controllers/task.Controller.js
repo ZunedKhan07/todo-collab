@@ -2,7 +2,7 @@ import { Task } from "../models/Task.model.js";
 import { User } from "../models/User.model.js";
 import { logAction } from "../utils/logAction.js";
 
-// 🔹 Create Task Controller
+// Create Task Controller
 export const createTask = async (req, res) => {
   try {
     const { title, description, status, priority, assignedUser } = req.body;
@@ -31,7 +31,7 @@ export const createTask = async (req, res) => {
       userId: req.user.id,
     });
 
-    // ✅ Emit event to all clients
+    // Emit event to all clients
     const io = req.app.get("io");
     io.emit("task_created", newTask);
 
@@ -41,7 +41,7 @@ export const createTask = async (req, res) => {
   }
 };
 
-// 🔹 Get All Tasks
+// Get All Tasks
 export const getAllTasks = async (req, res) => {
   try {
     const tasks = await Task.find().populate("assignedUser", "name email");
@@ -51,60 +51,39 @@ export const getAllTasks = async (req, res) => {
   }
 };
 
-// 🔹 Update Task Controller
+// Update Task Controller
 export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
     const { title, description, status, priority, assignedUser } = req.body;
 
-    const invalidTitles = ["Todo", "In Progress", "Done"];
-    if (title && invalidTitles.includes(title.trim())) {
-      return res.status(400).json({ msg: "Task title cannot be a column name" });
-    }
+    const updatedTask = await Task.findByIdAndUpdate(
+      id,
+      {
+        ...(title && { title }),
+        ...(description && { description }),
+        ...(status && { status }),
+        ...(priority && { priority }),
+        ...(assignedUser && { assignedUser }),
+        lastUpdatedBy: req.user?.id, // optional
+        updatedAt: new Date(),
+      },
+      { new: true }
+    );
 
-    if (title) {
-      const existing = await Task.findOne({ title: title.trim(), _id: { $ne: id } });
-      if (existing) {
-        return res.status(400).json({ msg: "Task title must be unique" });
-      }
-    }
+    if (!updatedTask) return res.status(404).json({ msg: "Task not found" });
 
-  const updatedTask = await Task.findByIdAndUpdate(
-  id,
-  {
-    title,
-    description,
-    status,
-    priority,
-    assignedUser,
-    lastUpdatedBy: req.user.id,
-    updatedAt: Date.now(),
-  },
-  { new: true }
-);
-
-
-    if (!updatedTask) {
-      return res.status(404).json({ msg: "Task not found" });
-    }
-
-    await logAction({
-      actionType: "update",
-      taskId: updatedTask._id,
-      userId: req.user.id,
-    });
-
-    // Emit update event
+    // Emit socket event
     const io = req.app.get("io");
     io.emit("task_updated", updatedTask);
 
-    res.status(200).json({ msg: "Task updated successfully", task: updatedTask });
+    res.status(200).json({ msg: "Task updated", task: updatedTask });
   } catch (err) {
-    res.status(500).json({ msg: "Failed to update task", err });
+    res.status(500).json({ msg: "Update failed", err });
   }
 };
 
-// 🔹 Delete Task
+// Delete Task
 export const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
@@ -118,7 +97,7 @@ export const deleteTask = async (req, res) => {
       userId: req.user.id,
     });
 
-    // ✅ Emit delete event
+    // Emit delete event
     const io = req.app.get("io");
     io.emit("task_deleted", deleted);
 
@@ -128,10 +107,10 @@ export const deleteTask = async (req, res) => {
   }
 };
 
-// 🔹 Smart Assign Task
+// Smart Assign Task
 export const smartAssignTask = async (req, res) => {
   try {
-    const { title, description, priority } = req.body;
+    const { id } = req.params;
 
     const users = await User.find();
     if (users.length === 0) {
@@ -151,27 +130,29 @@ export const smartAssignTask = async (req, res) => {
     userTaskCounts.sort((a, b) => a.count - b.count);
     const leastBusyUser = userTaskCounts[0].user;
 
-    const newTask = await Task.create({
-      title,
-      description,
-      priority,
-      assignedUser: leastBusyUser._id,
-      status: "Todo",
-    });
+    const updatedTask = await Task.findByIdAndUpdate(
+      id,
+      {
+        assignedUser: leastBusyUser._id,
+        updatedAt: new Date(),
+      },
+      { new: true }
+    );
+
+    if (!updatedTask) return res.status(404).json({ msg: "Task not found" });
 
     await logAction({
       actionType: "assign",
-      taskId: newTask._id,
-      userId: req.user.id,
+      taskId: updatedTask._id,
+      userId: req.user?.id || "system",
     });
 
-    // Emit task_created event
     const io = req.app.get("io");
-    io.emit("task_created", newTask);
+    io.emit("task_updated", updatedTask);
 
-    res.status(201).json({
+    res.status(200).json({
       msg: "Task smart-assigned successfully",
-      task: newTask,
+      task: updatedTask,
       assignedTo: {
         name: leastBusyUser.name,
         email: leastBusyUser.email,

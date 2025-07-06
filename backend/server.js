@@ -12,10 +12,10 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// 🔹 Create HTTP server
+// Create HTTP server
 const server = http.createServer(app);
 
-// 🔹 Setup Socket.IO server
+// Setup Socket.IO server
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:5173",
@@ -24,7 +24,7 @@ const io = new Server(server, {
   }
 });
 
-// 🔹 Socket.IO connection
+// Socket.IO connection
 io.on("connection", (socket) => {
   console.log("🟢 User connected:", socket.id);
 
@@ -33,24 +33,24 @@ io.on("connection", (socket) => {
   });
 });
 
-// 🔹 Make io available to routes/controllers if needed
+// Make io available to routes/controllers if needed
 app.set("io", io);
 
-// 🔹 CORS middleware (required for cookies/tokens from frontend)
+// CORS middleware (required for cookies/tokens from frontend)
 app.use(cors({
   origin: "http://localhost:5173",
   credentials: true
 }));
 
-// 🔹 Other middlewares
+// Other middlewares
 app.use(express.json());
 
-// 🔹 Routes
+// Routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/tasks", taskRoutes);
 app.use("/api/v1/logs", logRoutes);
 
-// 🔹 Connect DB and start server
+// Connect DB and start server
 connectDB();
 
 server.listen(PORT, () =>

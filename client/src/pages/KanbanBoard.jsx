@@ -1,57 +1,70 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { fetchTasks } from "../redux/slices/taskSlice";
+import { fetchTasks, updateTaskStatus } from "../redux/slices/taskSlice";
+import KanbanColumn from "../components/KanbanColumn";
+import ActivityLog from "../components/ActivityLog";
+import MergeConflictModal from "../components/MergeConflictModal";
+import socket from "../socket";
 
 const KanbanBoard = () => {
   const dispatch = useDispatch();
   const { tasks, loading, error } = useSelector((state) => state.tasks);
+  const [conflictData, setConflictData] = useState(null);
 
   const columns = ["Todo", "In Progress", "Done"];
 
   useEffect(() => {
     dispatch(fetchTasks());
+
+    // Listen for conflict event from server
+    socket.on("task-conflict", (conflict) => {
+      setConflictData(conflict);
+    });
+
+    return () => {
+      socket.off("task-conflict");
+    };
   }, [dispatch]);
 
+  const handleDrop = (taskId, newStatus) => {
+    dispatch(updateTaskStatus({ id: taskId, status: newStatus }));
+  };
+
+  const handleResolveConflict = (resolvedTask) => {
+    dispatch(updateTaskStatus({ id: resolvedTask._id, status: resolvedTask.status }));
+    setConflictData(null);
+  };
+
   return (
-    <div className="kanban-container" style={{ display: "flex", gap: "1rem", padding: "2rem" }}>
-      {columns.map((col) => (
-        <div
-          key={col}
-          className="kanban-column"
-          style={{
-            flex: 1,
-            background: "#f4f4f4",
-            padding: "1rem",
-            borderRadius: "10px",
-            minHeight: "400px",
-          }}
-        >
-          <h3 style={{ textAlign: "center", marginBottom: "1rem" }}>{col}</h3>
+    <div style={{ display: "flex" }}>
+      {/* Kanban Columns */}
+      <div className="kanban-container" style={{ flex: 3 }}>
+        {columns.map((col) => (
+          <KanbanColumn
+            key={col}
+            status={col}
+            tasks={Array.isArray(tasks) ? tasks.filter((t) => t.status === col) : []}
+            onDrop={handleDrop}
+          />
+        ))}
+        {loading && <p className="loading-text">Loading...</p>}
+        {error && <p className="error-text">{error}</p>}
+      </div>
 
-          {loading && <p style={{ textAlign: "center" }}>Loading...</p>}
-          {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
+      {/* Activity Log Panel */}
+      <div style={{ flex: 1, padding: "1rem", borderLeft: "1px solid #ccc", background: "#fafafa" }}>
+        <h4 style={{ textAlign: "center", marginBottom: "10px" }}>📝 Activity Log</h4>
+        <ActivityLog />
+      </div>
 
-          <div className="task-list" style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {tasks
-              .filter((task) => task.status === col)
-              .map((task) => (
-                <div
-                  key={task._id}
-                  style={{
-                    background: "#fff",
-                    padding: "1rem",
-                    borderRadius: "8px",
-                    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                  }}
-                >
-                  <h4>{task.title}</h4>
-                  <p style={{ fontSize: "14px" }}>{task.description}</p>
-                  <p style={{ fontSize: "12px", color: "gray" }}>Priority: {task.priority}</p>
-                </div>
-              ))}
-          </div>
-        </div>
-      ))}
+      {/* Merge Conflict Modal */}
+      {conflictData && (
+        <MergeConflictModal
+          conflict={conflictData}
+          onClose={() => setConflictData(null)}
+          onResolve={handleResolveConflict}
+        />
+      )}
     </div>
   );
 };
