@@ -1,11 +1,25 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useDrag } from "react-dnd";
 import { useDispatch } from "react-redux";
-import { fetchTasks } from "../redux/slices/taskSlice";
-import axios from "../axios";
+import { fetchTasks } from "../../redux/slices/taskSlice";
+import axios from "../../axios";
 
 const TaskCard = ({ task }) => {
   const dispatch = useDispatch();
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await axios.get("/auth/all-users");
+        setUsers(res.data.users);
+      } catch (err) {
+        console.error("Error fetching users", err);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const [{ isDragging }, drag] = useDrag({
     type: "TASK",
@@ -15,12 +29,22 @@ const TaskCard = ({ task }) => {
     }),
   });
 
-  const handleSmartAssign = async (taskId) => {
+  const handleSmartAssign = async () => {
     try {
-      await axios.put(`/tasks/${taskId}/smart-assign`);
+      await axios.put(`/tasks/${task._id}/smart-assign`);
       dispatch(fetchTasks());
     } catch (err) {
       alert("Smart assign failed");
+      console.error(err);
+    }
+  };
+
+  const handleAssignUser = async (taskId, userId) => {
+    try {
+      await axios.put(`/tasks/${taskId}`, { assignedUser: userId });
+      dispatch(fetchTasks());
+    } catch (err) {
+      console.error("Manual assign failed", err);
     }
   };
 
@@ -42,19 +66,21 @@ const TaskCard = ({ task }) => {
       <p style={{ fontSize: "14px" }}>{task.description}</p>
       <p style={{ fontSize: "12px", color: "gray" }}>Priority: {task.priority}</p>
 
-      {/* Assigned user dropdown */}
       <select
         style={{ marginTop: "10px", fontSize: "13px", padding: "4px" }}
-        defaultValue={task.assignedUser || ""}
+        value={task.assignedUser || ""}
+        onChange={(e) => handleAssignUser(task._id, e.target.value)}
       >
         <option value="">-- Assign User --</option>
-        <option value="User1">User1</option>
-        <option value="User2">User2</option>
+        {users.map((user) => (
+          <option key={user._id} value={user._id}>
+            {user.name}
+          </option>
+        ))}
       </select>
 
-      {/* Smart Assign Button */}
       <button
-        onClick={() => handleSmartAssign(task._id)}
+        onClick={handleSmartAssign}
         style={{
           fontSize: "12px",
           marginTop: "6px",

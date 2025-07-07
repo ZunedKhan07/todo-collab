@@ -1,13 +1,9 @@
-import { ActionLog } from "../models/ActionLog.model.js";
+import { Log } from "../models/Log.model.js";
 
 export const logAction = async ({ actionType, taskId, userId }) => {
   try {
-    await ActionLog.create({
-      actionType,
-      taskId,
-      userId,
-    });
-  } catch (error) {
-    console.error("❌ Failed to log action:", error.message);
+    await Log.create({ actionType, taskId, userId, timestamp: new Date() });
+  } catch (err) {
+    console.error("Logging failed", err.message);
   }
 };

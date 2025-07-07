@@ -1,10 +1,8 @@
-import express from "express";
-import { getRecentLogs } from "../controllers/log.controller.js";
-import { isAuthenticated } from "../middlewares/auth.middleware.js";
+import { Router } from "express";
+import { getLastLogs } from "../controllers/logController.js";
 
-const router = express.Router();
+const router = Router();
 
-// ✅ GET /api/v1/logs/recent
-router.get("/recent", isAuthenticated, getRecentLogs);
+router.get("/", getLastLogs);
 
 export default router;

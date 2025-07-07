@@ -2,7 +2,7 @@ import { Task } from "../models/Task.model.js";
 import { User } from "../models/User.model.js";
 import { logAction } from "../utils/logAction.js";
 
-// Create Task Controller
+// 🚀 Create a task
 export const createTask = async (req, res) => {
   try {
     const { title, description, status, priority, assignedUser } = req.body;
@@ -25,15 +25,9 @@ export const createTask = async (req, res) => {
       assignedUser,
     });
 
-    await logAction({
-      actionType: "create",
-      taskId: newTask._id,
-      userId: req.user.id,
-    });
+    await logAction({ actionType: "create", taskId: newTask._id, userId: req.user.id });
 
-    // Emit event to all clients
-    const io = req.app.get("io");
-    io.emit("task_created", newTask);
+    req.app.get("io").emit("task_created", newTask);
 
     res.status(201).json({ msg: "Task created successfully", task: newTask });
   } catch (err) {
@@ -41,7 +35,7 @@ export const createTask = async (req, res) => {
   }
 };
 
-// Get All Tasks
+// 🚀 Get all tasks
 export const getAllTasks = async (req, res) => {
   try {
     const tasks = await Task.find().populate("assignedUser", "name email");
@@ -51,7 +45,7 @@ export const getAllTasks = async (req, res) => {
   }
 };
 
-// Update Task Controller
+// 🚀 Update task
 export const updateTask = async (req, res) => {
   try {
     const { id } = req.params;
@@ -65,7 +59,7 @@ export const updateTask = async (req, res) => {
         ...(status && { status }),
         ...(priority && { priority }),
         ...(assignedUser && { assignedUser }),
-        lastUpdatedBy: req.user?.id, // optional
+        lastUpdatedBy: req.user?.id,
         updatedAt: new Date(),
       },
       { new: true }
@@ -73,49 +67,36 @@ export const updateTask = async (req, res) => {
 
     if (!updatedTask) return res.status(404).json({ msg: "Task not found" });
 
-    // Emit socket event
-    const io = req.app.get("io");
-    io.emit("task_updated", updatedTask);
-
+    req.app.get("io").emit("task_updated", updatedTask);
     res.status(200).json({ msg: "Task updated", task: updatedTask });
   } catch (err) {
     res.status(500).json({ msg: "Update failed", err });
   }
 };
 
-// Delete Task
+// 🚀 Delete task
 export const deleteTask = async (req, res) => {
   try {
     const { id } = req.params;
     const deleted = await Task.findByIdAndDelete(id);
-
     if (!deleted) return res.status(404).json({ msg: "Task not found" });
 
-    await logAction({
-      actionType: "delete",
-      taskId: deleted._id,
-      userId: req.user.id,
-    });
+    await logAction({ actionType: "delete", taskId: deleted._id, userId: req.user.id });
 
-    // Emit delete event
-    const io = req.app.get("io");
-    io.emit("task_deleted", deleted);
-
+    req.app.get("io").emit("task_deleted", deleted);
     res.status(200).json({ msg: "Task deleted" });
   } catch (err) {
     res.status(500).json({ msg: "Error deleting task", err });
   }
 };
 
-// Smart Assign Task
+// 🚀 Smart assign
 export const smartAssignTask = async (req, res) => {
   try {
     const { id } = req.params;
 
     const users = await User.find();
-    if (users.length === 0) {
-      return res.status(400).json({ msg: "No users found to assign task" });
-    }
+    if (!users.length) return res.status(400).json({ msg: "No users available" });
 
     const userTaskCounts = await Promise.all(
       users.map(async (user) => {
@@ -132,26 +113,18 @@ export const smartAssignTask = async (req, res) => {
 
     const updatedTask = await Task.findByIdAndUpdate(
       id,
-      {
-        assignedUser: leastBusyUser._id,
-        updatedAt: new Date(),
-      },
+      { assignedUser: leastBusyUser._id, updatedAt: new Date() },
       { new: true }
     );
 
     if (!updatedTask) return res.status(404).json({ msg: "Task not found" });
 
-    await logAction({
-      actionType: "assign",
-      taskId: updatedTask._id,
-      userId: req.user?.id || "system",
-    });
+    await logAction({ actionType: "assign", taskId: updatedTask._id, userId: req.user?.id || "system" });
 
-    const io = req.app.get("io");
-    io.emit("task_updated", updatedTask);
+    req.app.get("io").emit("task_updated", updatedTask);
 
     res.status(200).json({
-      msg: "Task smart-assigned successfully",
+      msg: "Task smart-assigned",
       task: updatedTask,
       assignedTo: {
         name: leastBusyUser.name,

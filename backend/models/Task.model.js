@@ -1,44 +1,15 @@
 import mongoose from "mongoose";
 
-const taskSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
-    trim: true,
+const taskSchema = new mongoose.Schema(
+  {
+    title: { type: String, required: true, unique: true },
+    description: { type: String },
+    priority: { type: String, enum: ["Low", "Medium", "High"], default: "Medium" },
+    status: { type: String, enum: ["Todo", "In Progress", "Done"], default: "Todo" },
+    assignedUser: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    lastUpdatedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
-  description: {
-    type: String,
-  },
-  status: {
-    type: String,
-    enum: ["Todo", "In Progress", "Done"],
-    default: "Todo",
-  },
-  priority: {
-    type: String,
-    enum: ["Low", "Medium", "High"],
-    default: "Medium",
-  },
-  assignedUser: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-  },
-
-  // Conflict detection fields
-  lastUpdatedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-  },
-
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
+  { timestamps: true }
+);
 
 export const Task = mongoose.model("Task", taskSchema);

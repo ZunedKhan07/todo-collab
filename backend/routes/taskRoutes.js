@@ -1,19 +1,18 @@
 import { Router } from "express";
-import { 
-         createTask,
-         deleteTask,
-         getAllTasks, 
-         smartAssignTask, 
-         updateTask
-       } 
-          from "../controllers/task.Controller.js";
+import {
+  createTask,
+  getAllTasks,
+  updateTask,
+  deleteTask,
+  smartAssignTask,
+} from "../controllers/taskController.js";
 
 const router = Router();
 
 router.post("/", createTask);
 router.get("/", getAllTasks);
-router.put("/", updateTask);
+router.put("/:id", updateTask);
 router.delete("/:id", deleteTask);
-router.put("/tasks/:id/smart-assign", smartAssignTask);
+router.put("/:id/smart-assign", smartAssignTask);
 
 export default router;
