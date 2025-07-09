@@ -1,8 +1,7 @@
-// src/socket.js
 import { io } from "socket.io-client";
 
-// Backend server URL (adjust if deployed)
-const socket = io("http://localhost:5000", {
+// ✅ Connect to backend, not frontend
+const socket = io(import.meta.env.VITE_SOCKET_URL, {
   transports: ["websocket"],
   withCredentials: true,
 });

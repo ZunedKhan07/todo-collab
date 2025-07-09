@@ -1,9 +1,16 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "../../axios";
 
+// 🔹 Fetch all tasks
 export const fetchTasks = createAsyncThunk("tasks/fetchTasks", async () => {
   const res = await axios.get("/tasks");
   return res.data.tasks;
+});
+
+// 🔹 Create a new task
+export const createTask = createAsyncThunk("tasks/createTask", async (taskData) => {
+  const res = await axios.post("/tasks", taskData, { withCredentials: true });
+  return res.data.task;
 });
 
 const taskSlice = createSlice({
@@ -15,6 +22,7 @@ const taskSlice = createSlice({
   reducers: {},
   extraReducers: (builder) => {
     builder
+      // 🔸 FETCH
       .addCase(fetchTasks.pending, (state) => {
         state.loading = true;
       })
@@ -24,7 +32,13 @@ const taskSlice = createSlice({
       })
       .addCase(fetchTasks.rejected, (state) => {
         state.loading = false;
+      })
+
+      // 🔸 CREATE
+      .addCase(createTask.fulfilled, (state, action) => {
+        state.tasks = [...(state.tasks || []), action.payload];
       });
+
   },
 });
 

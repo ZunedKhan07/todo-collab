@@ -11,6 +11,8 @@ export const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
+    console.log("Received:", { name, email, password }); // 🔍 Check incoming
+
     if (!name || !email || !password)
       return res.status(400).json({ msg: "All fields are required" });
 
@@ -20,17 +22,25 @@ export const register = async (req, res) => {
 
     const user = await User.create({ name, email, password });
 
+    console.log("User created:", user); // 🔍 Confirm creation
+
     const token = generateToken(user._id);
+    console.log("Generated token:", token); // 🔍 Confirm token
 
     res
       .cookie("token", token, {
         httpOnly: true,
         sameSite: "Lax",
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        secure: false, // Add this if not in production (for localhost testing)
+        maxAge: 7 * 24 * 60 * 60 * 1000,
       })
       .status(201)
-      .json({ msg: "Registered successfully", user: { id: user._id, name: user.name, email: user.email } });
+      .json({
+        msg: "Registered successfully",
+        user: { id: user._id, name: user.name, email: user.email },
+      });
   } catch (err) {
+    console.error("REGISTER ERROR:", err); // ✅ Important log
     res.status(500).json({ msg: "Registration failed", error: err.message });
   }
 };
@@ -54,10 +64,14 @@ export const login = async (req, res) => {
       .cookie("token", token, {
         httpOnly: true,
         sameSite: "Lax",
+        secure: false, // 🔁 keep false for localhost
         maxAge: 7 * 24 * 60 * 60 * 1000,
       })
       .status(200)
-      .json({ msg: "Login successful", user: { id: user._id, name: user.name, email: user.email } });
+      .json({
+        msg: "Login successful",
+        user: { id: user._id, name: user.name, email: user.email },
+      });
   } catch (err) {
     res.status(500).json({ msg: "Login failed", error: err.message });
   }
@@ -74,8 +88,11 @@ export const getMe = async (req, res) => {
   res.status(200).json({ user });
 };
 
-// ✅ For frontend user dropdown
 export const getAllUsers = async (req, res) => {
-  const users = await User.find().select("name email _id");
-  res.status(200).json({ users });
+  try {
+    const users = await User.find({}, "name email _id");
+    res.status(200).json({ users });
+  } catch (err) {
+    res.status(500).json({ msg: "Error fetching users", error: err.message });
+  }
 };

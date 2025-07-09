@@ -5,7 +5,9 @@ import KanbanColumn from "./KanbanColumn";
 
 const KanbanBoard = () => {
   const dispatch = useDispatch();
-  const { tasks } = useSelector((state) => state.tasks);
+
+  // 🛡 Safe fallback in case tasks is undefined
+  const { tasks = [] } = useSelector((state) => state.tasks || {});
 
   useEffect(() => {
     dispatch(fetchTasks());
@@ -16,7 +18,11 @@ const KanbanBoard = () => {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", padding: "20px" }}>
       {statuses.map((status) => (
-        <KanbanColumn key={status} status={status} tasks={tasks.filter((task) => task.status === status)} />
+        <KanbanColumn
+          key={status}
+          status={status}
+          tasks={tasks.filter((task) => task.status === status)}
+        />
       ))}
     </div>
   );

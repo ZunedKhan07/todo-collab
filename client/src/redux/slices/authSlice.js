@@ -1,25 +1,21 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "../../axios";
 
-// ✅ Check login
 export const checkAuth = createAsyncThunk("auth/checkAuth", async () => {
   const res = await axios.get("/auth/me");
   return res.data;
 });
 
-// ✅ Login
 export const loginUser = createAsyncThunk("auth/login", async (credentials) => {
   const res = await axios.post("/auth/login", credentials);
   return res.data;
 });
 
-// ✅ Register
 export const registerUser = createAsyncThunk("auth/register", async (userData) => {
   const res = await axios.post("/auth/register", userData);
   return res.data;
 });
 
-// ✅ Logout
 export const logoutUser = createAsyncThunk("auth/logout", async () => {
   await axios.post("/auth/logout");
 });
@@ -30,11 +26,18 @@ const authSlice = createSlice({
     user: null,
     loading: false,
     error: null,
+    socket: null,
   },
-  reducers: {},
+  reducers: {
+    setUser: (state, action) => {
+      state.user = action.payload;
+    },
+    setSocket: (state, action) => {
+      state.socket = action.payload;
+    },
+  },
   extraReducers: (builder) => {
     builder
-      // Check Auth
       .addCase(checkAuth.pending, (state) => {
         state.loading = true;
       })
@@ -46,8 +49,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.user = null;
       })
-
-      // Login
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
       })
@@ -59,8 +60,6 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.error.message;
       })
-
-      // Register
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
       })
@@ -72,12 +71,12 @@ const authSlice = createSlice({
         state.loading = false;
         state.error = action.error.message;
       })
-
-      // Logout
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
+        state.socket = null;
       });
   },
 });
 
+export const { setUser, setSocket } = authSlice.actions;
 export default authSlice.reducer;

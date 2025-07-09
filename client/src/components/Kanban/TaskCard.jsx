@@ -17,7 +17,6 @@ const TaskCard = ({ task }) => {
         console.error("Error fetching users", err);
       }
     };
-
     fetchUsers();
   }, []);
 
@@ -29,22 +28,25 @@ const TaskCard = ({ task }) => {
     }),
   });
 
+  // ✅ Smart assign API
   const handleSmartAssign = async () => {
     try {
       await axios.put(`/tasks/${task._id}/smart-assign`);
       dispatch(fetchTasks());
     } catch (err) {
       alert("Smart assign failed");
-      console.error(err);
+      console.error("Smart assign error:", err);
     }
   };
 
+  // ✅ Manual assign API (FIXED endpoint here)
   const handleAssignUser = async (taskId, userId) => {
     try {
-      await axios.put(`/tasks/${taskId}`, { assignedUser: userId });
+      if (!userId) return;
+      await axios.put(`/tasks/${taskId}/assign`, { assignedUser: userId });
       dispatch(fetchTasks());
     } catch (err) {
-      console.error("Manual assign failed", err);
+      console.error("❌ Manual assign failed:", err);
     }
   };
 

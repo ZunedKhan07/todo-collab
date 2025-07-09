@@ -15,12 +15,13 @@ import logRoutes from "./routes/logRoutes.js";
 import connectDB from "./config/db.js";
 
 // Socket Logic
-import socketHandler from "./socket/socketHandler.js";
+import { handleSocketEvents } from "./socket/socketHandler.js";
 
 dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
+// ✅ Socket.IO Setup
 const io = new Server(server, {
   cors: {
     origin: process.env.CLIENT_URL,
@@ -28,8 +29,14 @@ const io = new Server(server, {
   },
 });
 
+// ✅ Save io instance to app so we can access it in req.app.get("io")
+app.set("io", io);
+
 // Middleware
-app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
+app.use(cors({
+  origin: process.env.CLIENT_URL || "http://localhost:5173",
+  credentials: true,
+}));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -38,8 +45,8 @@ app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/tasks", taskRoutes);
 app.use("/api/v1/logs", logRoutes);
 
-// Socket.io Handler
-socketHandler(io);
+// Setup socket handlers
+handleSocketEvents(io);
 
 // Connect to DB and start server
 const PORT = process.env.PORT || 5000;
@@ -48,3 +55,5 @@ connectDB().then(() => {
     console.log(`✅ Server running on http://localhost:${PORT}`);
   });
 });
+
+export { io };
